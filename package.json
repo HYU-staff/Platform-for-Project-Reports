@@ -1,0 +1,10 @@
+{
+  "name": "platform-for-project-reports",
+  "version": "1.0.0",
+  "description": "정부 재정지원사업 기본계획·서식 기반 보고서 작성 플랫폼 (단일 HTML)",
+  "private": true,
+  "scripts": {
+    "build": "node tools/build.js",
+    "check": "node tools/build.js && node -e \"const s=require('fs').readFileSync('index.html','utf8');const m=s.match(/<script>([\\s\\S]*)<\\/script>/);new Function(m[1]);console.log('문법 검사 통과')\""
+  }
+}
