@@ -4,11 +4,13 @@
 
 ## ▶ 데모 바로 보기
 
-**[데모 열기](https://YOUR-ID.github.io/Platform-for-Project-Reports/#demo)** — GitHub Pages를 켠 뒤 `YOUR-ID`를 내 GitHub 아이디로 바꿔 주세요.
+### **[👉 데모 열기 (웹에서 바로 실행)](https://claude.ai/artifact/4QY64heLHXZiTDKcWrXqy4)**
 
-- 처음 방문하면(저장된 사업이 없으면) 데모가 자동으로 시작되고, 오른쪽 아래 안내창이 14단계로 화면을 옮겨 가며 설명합니다.
-- 주소 끝에 `#demo`를 붙이면 언제든 데모로 시작합니다.
-- 데모는 가상 대학(하냥대학교) 데이터이며, 데모에서 입력한 내용은 저장되지 않습니다. **데모 종료**를 누르면 내 사업을 만들 수 있습니다.
+설치나 GitHub 설정 없이 링크만 누르면 웹 화면으로 열립니다.
+
+- 데모가 자동으로 시작되고, 오른쪽 아래 안내창이 14단계로 화면을 옮겨 가며 설명합니다.
+- 데모는 가상 대학(하냥대학교) 데이터이며, 데모에서 입력한 내용은 저장되지 않습니다.
+- 내 PC에서는 저장소의 `index.html`을 내려받아 브라우저로 열어도 똑같이 실행됩니다(주소 끝 `#demo` → 데모로 시작).
 
 | 개요·점검 | 서식 매칭 맵 |
 |---|---|
@@ -20,14 +22,15 @@
 | **다른 사업: 서식 파일로 구조 만들기** | |
 | ![구조 만들기](docs/screenshots/07-structure-from-files.png) | |
 
-## GitHub Pages로 공개하기
+## (선택) GitHub Pages 주소로도 공개하기
 
-1. GitHub에서 새 저장소(예: `Platform-for-Project-Reports`)를 만들고, 이 폴더의 내용을 그대로 올립니다(`index.html`이 저장소 맨 위에 있어야 합니다).
-2. 저장소 **Settings → Pages → Build and deployment**에서 Source를 **Deploy from a branch**, Branch를 **main / (root)**로 저장합니다.
-3. 1~2분 뒤 `https://내아이디.github.io/Platform-for-Project-Reports/`가 열립니다. 데모로 바로 가는 주소는 끝에 `#demo`를 붙입니다.
-4. 위 ‘데모 열기’ 링크의 `YOUR-ID`를 내 아이디로 바꿔 커밋합니다.
+이 저장소에는 GitHub Pages 자동 배포 설정(`.github/workflows/pages.yml`)이 들어 있습니다.
 
-`.nojekyll` 파일은 GitHub Pages가 파일을 가공하지 않고 그대로 내보내도록 넣어 둔 것입니다.
+1. 저장소 **Settings → Pages → Build and deployment**에서 Source를 **GitHub Actions**로 고릅니다.
+2. `main` 브랜치에 올리면 자동으로 배포되고, **Actions** 탭에서 진행 상황을 볼 수 있습니다.
+3. 완료되면 Settings → Pages 위쪽에 표시되는 주소(`https://아이디.github.io/저장소이름/`)로 열립니다. 끝에 `#demo`를 붙이면 데모로 시작합니다.
+
+> 저장소는 Public이어야 하며, `index.html`이 저장소 맨 위에 있어야 합니다(압축을 푼 폴더 **안의 파일**을 올려 주세요).
 
 ## 내 PC에서 실행
 
@@ -73,6 +76,7 @@ src/
 tools/build.js      src → index.html 결합
 docs/screenshots/   README용 데모 화면
 .nojekyll           GitHub Pages 원본 그대로 배포
+.github/workflows/  GitHub Pages 자동 배포 설정
 data/               기관별 내보내기 JSON 보관 위치(.gitignore로 업로드 제외)
 ```
 
