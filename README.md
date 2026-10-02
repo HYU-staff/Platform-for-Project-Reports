@@ -4,13 +4,23 @@
 
 ## ▶ 데모 바로 보기
 
-### **[👉 데모 열기 (웹에서 바로 실행)](https://claude.ai/artifact/4QY64heLHXZiTDKcWrXqy4)**
+<!-- DEMO_LINK_START -->
+### **[👉 데모 열기 — 웹 주소 준비 중 (아래 1단계를 먼저 해 주세요)](../../settings/pages)**
+<!-- DEMO_LINK_END -->
 
-설치나 GitHub 설정 없이 링크만 누르면 웹 화면으로 열립니다.
+일반 웹 페이지(GitHub Pages)로 열립니다. 설치나 로그인 없이 누구나 링크로 볼 수 있습니다.
 
 - 데모가 자동으로 시작되고, 오른쪽 아래 안내창이 14단계로 화면을 옮겨 가며 설명합니다.
 - 데모는 가상 대학(하냥대학교) 데이터이며, 데모에서 입력한 내용은 저장되지 않습니다.
-- 내 PC에서는 저장소의 `index.html`을 내려받아 브라우저로 열어도 똑같이 실행됩니다(주소 끝 `#demo` → 데모로 시작).
+- 웹 주소 끝에 `#demo`를 붙이면 언제든 데모로 시작합니다.
+
+### 웹 주소 켜기 (처음 한 번만)
+
+1. 저장소 **Settings → Pages → Build and deployment**에서 Source를 **GitHub Actions**로 고릅니다.
+2. **Actions** 탭 → **웹 페이지 배포** → **Run workflow**를 누릅니다(이후에는 `main`에 올릴 때마다 자동 실행).
+3. 1~2분 뒤 끝나면 위의 ‘데모 열기’ 링크가 실제 웹 주소(`https://아이디.github.io/저장소이름/#demo`)로 **자동으로 바뀝니다.**
+
+> 저장소는 **Public**이어야 하고, `index.html`이 저장소 맨 위에 있어야 합니다(압축을 푼 폴더 **안의 파일**을 올려 주세요).
 
 | 개요·점검 | 서식 매칭 맵 |
 |---|---|
@@ -21,16 +31,6 @@
 | ![내용(안)](docs/screenshots/05-draft-suggestion.png) | ![문서 미리보기](docs/screenshots/06-document-preview.png) |
 | **다른 사업: 서식 파일로 구조 만들기** | |
 | ![구조 만들기](docs/screenshots/07-structure-from-files.png) | |
-
-## (선택) GitHub Pages 주소로도 공개하기
-
-이 저장소에는 GitHub Pages 자동 배포 설정(`.github/workflows/pages.yml`)이 들어 있습니다.
-
-1. 저장소 **Settings → Pages → Build and deployment**에서 Source를 **GitHub Actions**로 고릅니다.
-2. `main` 브랜치에 올리면 자동으로 배포되고, **Actions** 탭에서 진행 상황을 볼 수 있습니다.
-3. 완료되면 Settings → Pages 위쪽에 표시되는 주소(`https://아이디.github.io/저장소이름/`)로 열립니다. 끝에 `#demo`를 붙이면 데모로 시작합니다.
-
-> 저장소는 Public이어야 하며, `index.html`이 저장소 맨 위에 있어야 합니다(압축을 푼 폴더 **안의 파일**을 올려 주세요).
 
 ## 내 PC에서 실행
 
@@ -76,7 +76,7 @@ src/
 tools/build.js      src → index.html 결합
 docs/screenshots/   README용 데모 화면
 .nojekyll           GitHub Pages 원본 그대로 배포
-.github/workflows/  GitHub Pages 자동 배포 설정
+.github/workflows/  웹 페이지 자동 배포 + README 데모 링크 자동 갱신
 data/               기관별 내보내기 JSON 보관 위치(.gitignore로 업로드 제외)
 ```
 
