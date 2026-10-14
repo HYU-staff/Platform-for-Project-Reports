@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>재정지원사업 보고서 작성 플랫폼</title>
+<title>Platform for Project Reports</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap">
@@ -179,6 +179,7 @@ table.t textarea{min-height:52px;font-size:12px}
 .lvl2{padding-left:14px}.lvl3{padding-left:28px}.lvl4{padding-left:42px}
 pre.prev{white-space:pre-wrap;max-height:260px;overflow:auto;background:var(--sunk);padding:10px;border-radius:4px;font-size:12px;margin:6px 0 0}
 .tour{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));width:min(360px,calc(100vw - 32px));background:var(--surface);border:1px solid var(--accent);border-radius:var(--r);box-shadow:0 8px 28px rgba(0,0,0,.18);padding:14px 16px;z-index:40;display:flex;flex-direction:column;gap:8px}
+[hidden]{display:none!important}
 .tour .tstep{font-size:11px;letter-spacing:.08em;color:var(--accent);font-weight:700}
 .tour h4{margin:0;font-size:15px}
 .tour p{margin:0;font-size:13px;color:var(--ink-2)}
@@ -195,7 +196,7 @@ pre.prev{white-space:pre-wrap;max-height:260px;overflow:auto;background:var(--su
 .empty-state{border:1px dashed var(--line);border-radius:var(--r);padding:28px;text-align:center;color:var(--ink-2);background:var(--surface)}
 </style>
 <div class="top">
-  <div class="brand"><b>재정지원사업 보고서 작성 플랫폼</b><span id="brandSub">기본계획 · 평가(실적)보고서 · 사업계획서 연계 표준 자동화</span></div>
+  <div class="brand"><b>Platform for Project Reports</b><span id="brandSub">기본계획 · 평가(실적)보고서 · 사업계획서 연계 표준 자동화</span></div>
   <span class="sp"></span>
   <div class="projsel"><label class="small muted" for="projSel">사업</label><select id="projSel"></select><button class="btn sm" data-act="newProjAsk">새 사업</button><button class="btn sm" data-act="startDemo">데모 체험</button></div>
   <span class="chip g" id="chipUniv">기관</span>
@@ -735,7 +736,7 @@ function linkProfile(p){
 }
 function ruleBasedProfile(sources,base){
   const p=Object.assign(BLANK_PROFILE(),base?clone(base):{}); p.docs=[];
-  const plans=sources.filter(s=>s.role==="plan"), forms=sources.filter(s=>s.role==="form");
+  const plans=sources.filter(s=>s.role==="plan"); let forms=sources.filter(s=>s.role==="form"); if(!forms.length)forms=sources.filter(s=>s.role==="prior");
   if(plans.length){ const R=analyzePlanText(plans.map(s=>s.text).join("\n\n")); ["planTitle","programName","goal","period"].forEach(k=>{if(R[k])p[k]=R[k]}); if(R.evalAreas.length)p.evalAreas=R.evalAreas; if(R.rules.length)p.rules=R.rules; if(R.budgetItems.length){p.budgetItems=R.budgetItems;p.budgetPlanItems=R.budgetItems.slice();} if(R.schedule.length)p.schedule=R.schedule; if(R.equipThreshold)p.equipThreshold=R.equipThreshold;
     if(R.hints.kpi)p.modules.kpi.on=true; if(R.hints.gov)p.modules.gov.on=true; if(R.hints.finance)p.modules.finance.on=true; if(R.kpiN){p.modules.kpi.min=Math.max(1,R.kpiN-2);p.modules.kpi.max=R.kpiN+2;} if(R.required.length)p.modules.gov.required=R.required;
     if(R.evalAreas.some(a=>a.bonus))p.modules.bonus.on=false; }
@@ -761,7 +762,7 @@ const PROFILE_SCHEMA=`{"programName":"사업명","planTitle":"기본계획 제�
 "modules":{"tasks":{"on":true,"label":"핵심과제 등 명칭","groups":[{"area":"세부영역명","sec":"3.1.1","n":2,"variant":""}]},"kpi":{"on":true,"label":"성과지표 명칭","min":3,"max":7},"gov":{"on":true,"label":"명칭","required":[{"match":"위원회","must":"학생","label":"재학생"}]},"finance":{"on":true,"label":"재정·집행기준"}},
 "docs":[{"id":"d1","type":"report|plan","name":"문서명","due":"제출기한","pageLimit":40,"cover":["표지 문구"],"sections":[{"id":"s1","no":"Ⅰ-1","title":"목차 제목","kind":"head|text|pp|auto|derived","src":"tasks|kpi|gov|budget|summary|빈문자열","group":"핵심과제 세부영역명 또는 빈 문자열","keys":0,"evalArea":"E1 또는 빈 문자열","onlyVariant":"","guide":["작성방법 요지(최대 3개, 각 60자 이내)"],"from":["d1:s3"]}]}]}`;
 function profilePrompt(sources){
-  const plans=sources.filter(s=>s.role==="plan"), forms=sources.filter(s=>s.role==="form");
+  const plans=sources.filter(s=>s.role==="plan"); let forms=sources.filter(s=>s.role==="form"); if(!forms.length)forms=sources.filter(s=>s.role==="prior");
   const per=forms.length?Math.floor(42000/forms.length):0;
   return `너는 한국 정부 재정지원사업(대학·기관 대상) 문서 구조 분석가다. 아래 [기본계획]과 [작성 서식]을 읽고, 보고서 작성 자동화 플랫폼이 쓸 "사업 프로필" JSON 하나만 답하라. 설명 문장 없이 JSON만.
 
@@ -968,7 +969,7 @@ function ruleDraft(doc,s){ const pr=prof(), y=pr.years, ts=relTasks(s), ks=relKp
   return {by:"rule",at:Date.now(),ideas:ideasFor(doc,s),fields:F,check:need}; }
 function draftContext(doc,s){ const pr=prof(), D=dat(); const area=pr.evalAreas.find(a=>a.id===s.evalArea);
   const ts=relTasks(s), ks=relKpis(s); const kw=new RegExp((s.title+" "+ts.map(t=>t.name).join(" ")).split(/[\s,()·]+/).filter(w=>w.length>=2).slice(0,10).map(w=>w.replace(/[.*+?^${}()|[\]\\]/g,"")).join("|")||"과제");
-  const prior=SOURCES.filter(x=>x.role==="prior"&&x.text).map(x=>"### "+x.name+"\n"+pickLines(x.text,Math.floor(9000/Math.max(1,SOURCES.filter(z=>z.role==="prior").length)),kw)).join("\n");
+  const own=secData(doc.id,s.id).prior; const prior=own?`### ${own.src} — ‘${own.head}’ (이 항목의 전년도 원문)\n${own.text.slice(0,9000)}`:SOURCES.filter(x=>x.role==="prior"&&x.text).map(x=>"### "+x.name+"\n"+pickLines(x.text,Math.floor(9000/Math.max(1,SOURCES.filter(z=>z.role==="prior").length)),kw)).join("\n");
   const other=s.from.map(r=>{const x=secRef(r);if(!x)return "";const d=secData(x.doc.id,x.sec.id);return `[${x.sec.no} ${x.sec.title}] `+["text","f1","f2","f3"].map(k=>d[k]).filter(Boolean).join(" / ")}).filter(Boolean).join("\n");
   return {area,ts,ks,prior,other}; }
 function draftPrompt(doc,s){ const pr=prof(), D=dat(), y=pr.years; const c=draftContext(doc,s); const keys=draftKeys(s);
@@ -999,15 +1000,152 @@ async function aiDraft(doc,s,signal){ const sm=await getSample(); if(!sm)throw {
 function applyDraft(doc,s,mode){ const d=secData(doc.id,s.id); const dr=d.draft; if(!dr)return 0; let c=0; Object.entries(dr.fields||{}).forEach(([k,v])=>{ if(mode==="all"||isEmptyField(d[k])){ d[k]=v; c++; } }); if(c)d.draftApplied=Date.now(); return c; }
 function draftBoxHTML(doc,s){ const d=secData(doc.id,s.id), dr=d.draft, pr=prof(); const empt=emptyKeys(doc,s);
   const lab=k=>k==="text"?"본문":(pr.ppFields.find(f=>f.k===k)||{l:k}).l.split("(")[0].split("→")[0].trim();
+  const pv=d.prior&&(!dr||dr.by!=="prior")?`<details style="margin-top:8px"><summary class="small">전년도 원문 보기 (${esc(d.prior.src)} · ${esc(d.prior.head)})</summary><div class="draftpre">${esc(d.prior.text)}</div></details>`:"";
   return `<div class="draftbox"><div class="row"><b>내용(안) 제시</b><span class="small muted">${empt.length?`빈 칸 ${empt.length}개`:"모든 칸이 채워져 있음"} · 초안을 만들어 보여주고, 확인 후 적용합니다</span><span style="flex:1"></span><button class="btn sm" data-act="ruleDraft" data-ddoc="${esc(doc.id)}" data-dsec="${esc(s.id)}">뼈대(안) 만들기</button><button class="btn sm pri" data-act="aiDraftOne" data-ddoc="${esc(doc.id)}" data-dsec="${esc(s.id)}">Claude로 내용(안) 작성</button></div>
-  ${!dr?`<ul class="ideas">${ideasFor(doc,s).map(i=>`<li>${esc(i)}</li>`).join("")}</ul>`:`<div class="small muted" style="margin-top:6px">${dr.by==="claude"?"Claude가 작성한 내용(안)":"규칙 기반 뼈대(안)"} · ${new Date(dr.at).toLocaleString("ko-KR")}</div>
+  ${!dr?`<ul class="ideas">${ideasFor(doc,s).map(i=>`<li>${esc(i)}</li>`).join("")}</ul>`:`<div class="small muted" style="margin-top:6px">${dr.by==="claude"?"Claude가 작성한 내용(안)":dr.by==="prior"?"전년도 제출 문서의 같은 항목 원문":"규칙 기반 뼈대(안)"} · ${new Date(dr.at).toLocaleString("ko-KR")}</div>
     ${dr.ideas&&dr.ideas.length?`<p class="small" style="margin:8px 0 2px"><b>작성 아이디어</b></p><ul class="ideas">${dr.ideas.map(i=>`<li>${esc(i)}</li>`).join("")}</ul>`:""}
     ${Object.entries(dr.fields).map(([k,v])=>`<p class="small" style="margin:8px 0 2px"><b>${esc(lab(k))}</b> ${isEmptyField(d[k])?pill("warn","빈 칸"):pill("n","작성됨")}</p><div class="draftpre">${esc(v)}</div>`).join("")}
     ${dr.check&&dr.check.length?`<p class="small" style="margin:8px 0 2px"><b>채워야 할 자료</b></p><ul class="ideas">${dr.check.map(i=>`<li>${esc(i)}</li>`).join("")}</ul>`:""}
-    <div class="row" style="margin-top:8px"><button class="btn pri sm" data-act="applyDraft" data-mode="empty" data-ddoc="${esc(doc.id)}" data-dsec="${esc(s.id)}">빈 칸에 적용</button><button class="btn sm" data-act="applyDraft" data-mode="all" data-ddoc="${esc(doc.id)}" data-dsec="${esc(s.id)}">모두 덮어쓰기</button><button class="btn ghost sm" data-act="dropDraft" data-ddoc="${esc(doc.id)}" data-dsec="${esc(s.id)}">버리기</button></div>`}</div>`; }
+    <div class="row" style="margin-top:8px"><button class="btn pri sm" data-act="applyDraft" data-mode="empty" data-ddoc="${esc(doc.id)}" data-dsec="${esc(s.id)}">빈 칸에 적용</button><button class="btn sm" data-act="applyDraft" data-mode="all" data-ddoc="${esc(doc.id)}" data-dsec="${esc(s.id)}">모두 덮어쓰기</button><button class="btn ghost sm" data-act="dropDraft" data-ddoc="${esc(doc.id)}" data-dsec="${esc(s.id)}">버리기</button></div>`}${pv}</div>`; }
 function batchBoxHTML(){ const T=draftTargets(); const withD=T.filter(x=>secData(x.doc.id,x.s.id).draft).length;
   return `<div class="draftbox" style="margin-bottom:14px"><div class="row"><b>빈 항목 내용(안) 일괄 작성</b><span class="small muted">내용이 없는 항목 ${T.length}개 · 내용(안) 준비 ${withD}개</span><span style="flex:1"></span>${BATCH?`<span class="busy">${esc(BATCH.msg)}</span><button class="btn sm" data-act="batchStop">멈추기</button>`:`<button class="btn sm" data-act="batchRule" ${T.length?"":"disabled"}>뼈대(안) 일괄</button><button class="btn sm pri" data-act="batchAI" ${T.length?"":"disabled"}>Claude로 일괄 작성</button><button class="btn sm" data-act="batchApply" ${withD?"":"disabled"}>준비된 내용(안)을 빈 칸에 적용</button>`}</div>
   <label class="row small" style="margin-top:6px"><input type="checkbox" id="showDraft" ${SHOWDRAFT?"checked":""}> 미리보기에서 빈 칸에 내용(안) 표시 (노란 배경, 제출 전 확인 필요)</label></div>`; }
+
+/* ---- 055.auto.js ---- */
+/* =====================================================================
+   7-c. 자동 채우기 : 올린 파일만으로 구조 → 공통 데이터 → 항목별 전년도 원문까지
+   - Claude 없이(로컬 파일로 열어도) 동작하는 규칙 처리. Claude가 있으면 그 위에 정밀 분석을 더할 수 있음
+   - 이미 입력된 값은 덮어쓰지 않음(빈 곳만 채움)
+   ===================================================================== */
+const CIRC="①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮";
+let AUTO_NEW=false;
+const numOf=s=>{ const v=parseFloat(String(s).replace(/,/g,"")); return isNaN(v)?"":v; };
+const noParen=s=>String(s||"").replace(/\([^)]*\)?/g," ").replace(/\[[^\]]*\]/g," ");
+// 파일이 보고서인지 계획서인지
+function srcType(s){ const nm=s.name||""; if(/보고서|평가|실적|결과/.test(nm))return "report"; if(/계획/.test(nm))return "plan"; const t=(s.text||"").slice(0,1500); return /보고서/.test(t)?"report":/계획서/.test(t)?"plan":"report"; }
+// 내장 템플릿과 같은 사업인지 (파일 이름·표지에 사업명이 있으면)
+function matchTemplate(srcs){ let best=null;
+  Object.values(TEMPLATES).forEach(t=>{ const core=norm(noParen(t.programName)); if(core.length<4)return;
+    const hit=srcs.filter(s=>norm((s.name||"")+" "+(s.text||"").slice(0,2500)).includes(core)).length; if(hit&&(!best||hit>best.hit))best={t,hit}; });
+  return best&&best.t; }
+function tocEndOf(L){ let e=-1; const lim=Math.min(L.length,Math.max(300,Math.floor(L.length*0.25))); for(let i=0;i<lim;i++)if(TOC_RE.test(L[i]))e=i; return e; }
+const stripNo=l=>String(l).replace(/^\s*(?:(?:[ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩ]+|I{1,3}|IV|V|VI{0,3})(?:-\d+)?\.?|\d+(?:\.\d+)*\.?|\d+\)|[가-하]\.|\[[^\]]{1,6}\])\s*/,"").trim();
+// 본문에서 항목 제목 줄 찾기 (목차 다음부터, 첫 번째로 충분히 닮은 줄)
+function locate(L,start,title,from){ const key=norm(noParen(title)); if(key.length<2)return -1; let best=-1,bs=0; const sub=/[:：]/.test(title)?norm(noParen(title.split(/[:：]/).pop())):"";
+  for(let i=Math.max(start,from||0);i<L.length;i++){ const l=L[i]; if(!l||l.length>110||TOC_RE.test(l))continue; const a=norm(noParen(stripNo(l))); if(a.length<2||a.length>key.length*1.8+8)continue;
+    let sc=a===key?1:jacc(a,key); if(sub.length>=4&&/[:：]/.test(l)&&a.endsWith(sub))sc=Math.max(sc,0.85); if(sc>=0.8)return i; if(sc>bs){bs=sc;best=i;} }
+  return bs>=0.55?best:-1; }
+const CHAPTER_RE=/^\s*(?:[ⅠⅡⅢⅣⅤⅥ]+|I{1,3}|IV|V)(?:-\d+)?\.\s*\S/;
+function cleanBody(lines,freq){ const kept=lines.filter(l=>{ const t=l.trim(); if(!t)return true; if(/^\d{1,3}$/.test(t))return false; const k=norm(t); if(k.length<40&&(freq[k]||0)>=3)return false; return true; }).map(l=>l.replace(/ᆞ\s*∙\s*|∙\s*/g,"ㅇ ").replace(/\s+$/,""));
+  const out=[]; kept.forEach(l=>{ const t=l.trim(), prev=out.length?out[out.length-1]:""; if(t&&prev.length>38&&!/[.:)다음함임됨]$/.test(prev.trim())&&!/^(ㅇ|-|□|○|※|\*|[①-⑮]|\d+[.)]|\(|\[|<|【|’|')/.test(t))out[out.length-1]=prev+" "+t; else out.push(l); });
+  return out.join("\n").replace(/\n{3,}/g,"\n\n").trim(); }
+function lineFreq(L){ const f={}; L.forEach(l=>{ const k=norm(l); if(k&&k.length<40)f[k]=(f[k]||0)+1; }); return f; }
+
+/* ── 1. 구조 ── */
+function autoStructure(srcs){ const pr=prof(); if(pr.docs&&pr.docs.length)return "";
+  const t=matchTemplate(srcs);
+  if(t){ const keep={name:P.name}; P.profile=clone(t); ensureData(P.profile,dat()); if(!P.name||/새 (재정지원)?사업/.test(P.name))P.name=t.programName; return `내장 템플릿 ‘${t.programName}’과 같은 사업이라 그 구조(평가영역·집행기준·문서 목차·매칭)를 적용했습니다`; }
+  const base={key:"custom",programName:pr.programName,orgLabel:pr.orgLabel,years:pr.years,variantLabel:pr.variantLabel,variants:pr.variants};
+  const np=ruleBasedProfile(srcs,base); if(!np.programName)np.programName=pr.programName;
+  np.docs.forEach(d=>{ const nm=d.name.replace(/[_\s]+\d{3,4}(\s*\d{1,2}\s*시)?(\s*\d{1,2}\s*분)?$/,"").replace(/[_]+/g," ").trim(); if(nm){ if(d.cover&&d.cover[0]===d.name)d.cover[0]=nm; d.name=nm; } });
+  P.profile=np; ensureData(np,dat());
+  const viaPrior=!srcs.some(s=>s.role==="form")&&srcs.some(s=>s.role==="prior");
+  return `${viaPrior?"작성 서식이 없어 전년도 제출 문서의 목차로 ":""}문서 ${np.docs.length}종 · 평가영역 ${np.evalAreas.length}개 · 집행기준 ${np.rules.length}개 구조를 만들었습니다`; }
+
+/* ── 2. 전년도 문서 → 공통 데이터 (규칙) ── */
+function groupFor(no,title){ const gs=taskGroups(); let best=null,bl=0;
+  if(no)gs.forEach(g=>{ const sec=String(g.sec||"").replace(/\.$/,""); if(!sec)return; if((no===sec||no.startsWith(sec+"."))&&sec.length>bl){best=g;bl=sec.length;} });
+  if(best)return best.area; let bs=0; gs.forEach(g=>{ const sc=overlap(title,g.area); if(sc>bs){bs=sc;best=g;} }); return bs>=0.5?best.area:""; }
+function tasksFrom(s){ const L=s.text.split("\n"); const st=tocEndOf(L)+1; const fq=lineFreq(L); const TRE=/^\s*(?:\d{1,2}\s+|[가-하]\.\s*)?과제\s*(\d{1,2})\s*[:：]\s*(.{2,90})$/; let head={no:"",title:""}; const out=[];
+  for(let i=st;i<L.length;i++){ const l=L[i].trim(); if(!l)continue;
+    let h=l.match(/^(\d{1,2}(?:\.\d{1,2})+)\.?\s+(\S.{1,50})$/)||l.match(/^(\d{1,2})\.\s+(\S.{1,60})$/); if(h&&!/과제\s*\d/.test(l)&&/[가-힣]{2}/.test(h[2])&&(fq[norm(l)]||0)<3){ head={no:h[1],title:h[2].replace(/\s*증빙.*$/,"").trim()}; continue; }
+    h=l.match(/세부\s*내용\s*\d*\s*[:：]\s*(.{2,40})$/); if(h){ head={no:"",title:h[1]}; continue; }
+    const m=l.match(TRE); if(!m||out.find(x=>x.no===m[1]))continue;
+    let goal=""; for(let j=i+1;j<Math.min(L.length,i+16);j++){ const g=L[j].match(/\((?:운영\s*)?목표\)\s*(.+)/); if(g){ goal=g[1].trim(); for(let k=j+1;k<j+4&&k<L.length;k++){ const c=L[k].trim(); if(!c||/^(ᆞ|∙|•|-|□|ㅇ|○|※)/.test(c)||/증빙|^\(/.test(c))break; goal+=" "+c; } break; } if(TRE.test(L[j].trim()))break; }
+    out.push({no:m[1],name:m[2].replace(/\s*\([A-Za-z][A-Za-z\s]*\)\s*$/,"").trim(),goal:goal.slice(0,220),group:groupFor(head.no,head.title),head:head.title.trim(),headNo:head.no,src:s.name}); }
+  return out.sort((a,b)=>+a.no-+b.no); }
+function kpiFrom(s){ const L=s.text.split("\n"); const RE=new RegExp("^\\s*["+CIRC+"]\\s*[\\(\\[]\\s*(신규|기존|수정)\\s*[\\)\\]]\\s*(.+)$"); const out=[];
+  L.forEach((l,i)=>{ const m=l.match(RE); if(!m)return; const tk=m[2].trim().split(/\s+/); const nums=[]; while(tk.length&&/^-?[\d,]+(\.\d+)?%?$/.test(tk[tk.length-1])&&nums.length<4)nums.unshift(tk.pop().replace(/%$/,"")); if(nums.length<4)return;
+    let unit=""; if(tk.length&&/^(%|N\/A|점|명|건|개|회|원|시간|배|\(%\))$/i.test(tk[tk.length-1]))unit=tk.pop().replace(/[()]/g,""); if(unit==="N/A")unit="";
+    const name=tk.join(" ").replace(/\s*증빙.*$/,"").trim(); if(name.length<2)return;
+    out.push({name,st:m[1],unit,base:numOf(nums[0]),t1:numOf(nums[1]),t2:numOf(nums[2]),t3:numOf(nums[3]),src:s.name,line:i+1}); });
+  return out; }
+function budgetFrom(s,items){ const L=s.text.split("\n"); const b={}; let total=null, at=-1;
+  for(let i=0;i<L.length;i++){ const m=L[i].match(new RegExp("^\\s*["+CIRC+"]?\\s*(.+?)\\s+([\\d,]+(?:\\.\\d+)?)\\s+([\\d.]+)\\s*%?\\s*$")); if(!m)continue;
+    const circ=CIRC.includes(L[i].trim()[0]); const nm=m[1].trim(); let key=items.find(k=>norm(k)===norm(nm)); if(!key&&at>=0&&circ&&nm.length>=2&&nm.length<40&&!/합\s*계|총\s*계/.test(nm))key=nm; if(key&&b[key]==null){ b[key]=numOf(m[2]); if(at<0)at=i; continue; }
+    if(at>=0&&/^합\s*계$|^총\s*계$/.test(m[1].trim())){ total=numOf(m[2]); break; } if(at>=0&&i-at>12)break; }
+  return {b,total,src:s.name}; }
+function govFrom(s){ const L=s.text.split("\n"); let st=L.findIndex(l=>/연번\s*구분\s*주요\s*기능/.test(l)); if(st<0)return []; const blocks=[]; let cur=null;
+  for(let i=st+1;i<Math.min(L.length,st+160);i++){ const l=L[i].trim(); if(!l){ if(cur&&blocks.length>=2)break; continue; } if(CHAPTER_RE.test(l)||/^\d+\.\d+\s/.test(l))break;
+    if(CIRC.includes(l[0])){ cur=[l.slice(1).trim()]; blocks.push(cur); } else if(cur)cur.push(l); }
+  return blocks.map(bl=>{ const S=bl.join(" ").replace(/\s+/g," "); const fi=S.search(/ᆞ|∙|•/); const name=(fi>=0?S.slice(0,fi):S).trim(); let R=fi>=0?S.slice(fi):"";
+    const mi=R.search(/(위원장|센터장|단장|본부장|팀장)/); const funcs=(mi>=0?R.slice(0,mi):R).split(/ᆞ∙|ᆞ|∙|•/).map(x=>x.trim()).filter(Boolean); let tail=mi>=0?R.slice(mi):"";
+    const cm=tail.match(/(\d+\s*회|상시|수시|-)\s+(\d+\s*회|상시|수시|-)/); const members=(cm?tail.slice(0,cm.index):tail).replace(/\s+\d+[~\-]?\d*p\s*$/,"").trim();
+    return {name,func:funcs.join(", ").slice(0,160),members:members.slice(0,160),y1:cm?cm[1]:"",y2:cm?cm[2]:"",out:""}; }).filter(g=>g.name&&g.name.length<40); }
+function rulePrior(srcs){ const pr=prof(); const priors=srcs.filter(s=>s.role==="prior"&&s.text); const reps=priors.filter(s=>srcType(s)==="report"), plans=priors.filter(s=>srcType(s)==="plan"); const order=reps.concat(plans);
+  const X={meta:{},tasks:[],kpi:[],b1:{},gov:[],findings:[],counts:{}};
+  for(const s of order){ const head=s.text.split("\n").slice(0,40);
+    if(!X.meta.org){ const o=head.map(l=>l.trim()).find(l=>/^[가-힣]{2,15}(대학교|대학|기관|센터|재단)(\s+[A-Za-z가-힣]{2,12})?$/.test(l)&&!/사업|계획|보고/.test(l)); if(o)X.meta.org=o; }
+    if(!X.meta.variant)(pr.variants||[]).forEach(v=>{ if(!X.meta.variant&&head.some(l=>norm(l)===norm(v)))X.meta.variant=v; }); }
+  // 과제 세부영역은 권역 등 구분에 따라 달라지므로 먼저 정함
+  const D0=dat(); if(X.meta.variant&&!D0._variantSet){ D0.meta.variant=X.meta.variant; D0._variantSet=1; X.variantApplied=1; } else if(!D0.meta.variant&&(pr.variants||[]).length)D0.meta.variant=pr.variants[0];
+  // 과제: 보고서 우선, 계획서는 표기 대조·목표 보충
+  const rt=reps.length?tasksFrom(reps[0]):[], pt=plans.length?tasksFrom(plans[0]):[]; const base=rt.length?rt:pt;
+  X.taskHeads=base.map(t=>({area:t.head,sec:t.headNo})); X.tasks=base.map(t=>{ const p=pt.find(x=>x.no===t.no); return {group:t.group||(p&&p.group)||"",no:t.no,name:t.name,planName:p?p.name:"",goal:t.goal||(p&&p.goal)||"",result:"",status:"",fb:"",next:"",next2:"",p1:"",p2:"",p3:"",chg:"유지",chgNote:"",oldName:""}; });
+  if(rt.length&&pt.length)rt.forEach(t=>{ const p=pt.find(x=>x.no===t.no); if(p&&norm(p.name)!==norm(t.name))X.findings.push({lv:"warn",area:pr.modules.tasks.label||"과제",msg:`과제${t.no} 이름이 문서마다 다릅니다: 보고서 ‘${t.name}’ / 계획서 ‘${p.name}’`,src:`${rt[0].src} · ${pt[0].src}`,fix:"올해 문서에서는 한 가지 표기로 통일"}); });
+  // 지표: 첫 표를 기준으로, 다른 표·문서의 값과 대조
+  const allK=[]; order.forEach(s=>kpiFrom(s).forEach(k=>allK.push(k)));
+  allK.forEach(k=>{ const ex=X.kpi.find(x=>norm(x.name)===norm(k.name)); if(!ex){ X.kpi.push(k); return; }
+    const a=[ex.base,ex.t1,ex.t2,ex.t3].join(" / "), b=[k.base,k.t1,k.t2,k.t3].join(" / "); if(a!==b&&!X.findings.find(f=>f.msg.includes(k.name)&&f.msg.includes(b)))X.findings.push({lv:"bad",area:pr.modules.kpi.label||"성과지표",msg:`‘${k.name}’ 기준값·목푯값이 표마다 다릅니다: ${a} ↔ ${b} (기준/1차/2차/3차)`,src:`${ex.src} ${ex.line}행 ↔ ${k.src} ${k.line}행`,fix:"확정값 하나로 통일하고 변경 사유가 있으면 명시"}); });
+  // 비목 예산
+  const items=pr.budgetItems||[]; if(items.length)for(const s of order){ const r=budgetFrom(s,items); if(Object.keys(r.b).length>=Math.min(3,items.length)){ X.b1=r.b; X.total=r.total; const sum=Object.values(r.b).reduce((a,v)=>a+n(v),0); if(r.total!=null&&Math.abs(sum-r.total)>0.5)X.findings.push({lv:"bad",area:"재정",msg:`비목 예산 합(${won(sum)})과 표의 합계(${won(r.total)})가 다릅니다`,src:r.src,fix:"비목별 금액을 다시 확인"}); break; } }
+  // 거버넌스
+  for(const s of order){ const g=govFrom(s); if(g.length){ X.gov=g; break; } }
+  X.counts={tasks:X.tasks.length,kpi:X.kpi.length,b1:Object.keys(X.b1).length,gov:X.gov.length}; X.srcNames=priors.map(s=>s.name);
+  return X; }
+function applyPriorEmpty(X){ const D=dat(), pr=prof(); const done=[];
+  if(X.meta.org&&!D.meta.org){ D.meta.org=X.meta.org; done.push("기관명"); }
+  if(X.variantApplied)done.push(`${pr.variantLabel||"구분"}(${X.meta.variant})`);
+  if(X.tasks.length&&!D.tasks.length){
+    if(!taskGroups().length&&X.taskHeads){ const gs=[]; X.taskHeads.forEach(h=>{ if(!h.area)return; const g=gs.find(x=>x.area===h.area); if(g)g.n++; else gs.push({area:h.area,sec:h.sec||"",n:1,variant:""}); });
+      if(gs.length){ pr.modules.tasks.on=true; pr.modules.tasks.groups=gs; X.tasks.forEach((t,i)=>{ if(!t.group)t.group=X.taskHeads[i].area||""; });
+        pr.docs.forEach(d=>d.sections.forEach(sc=>{ if(sc.kind==="head"||sc.kind==="auto")return; const g=gs.find(x=>(x.sec&&sc.no&&String(sc.no).replace(/^[ⅠⅡⅢⅣⅤ]+-/,"")===x.sec)||jacc(norm(sc.title),norm(x.area))>=0.7); if(g&&!sc.group)sc.group=g.area; }));
+        done.push(`과제 세부영역 ${gs.length}개(문서 소제목 기준)`); } }
+    D.tasks=X.tasks; done.push(`${pr.modules.tasks.label} ${X.tasks.length}개`); }
+  if(X.kpi.length&&!D.kpi.length){ D.kpi=X.kpi.map(k=>({name:k.name,st:k.st,unit:k.unit,base:k.base,t1:k.t1,t2:k.t2,t3:k.t3,act:"",formula:"",why:"",links:"",src:{base:k.base,t1:k.t1,t2:k.t2,t3:k.t3}})); done.push(`${pr.modules.kpi.label} ${X.kpi.length}개`); }
+  let nb=0; Object.keys(X.b1).forEach(k=>{ if(!(pr.budgetItems||[]).includes(k)){ pr.budgetItems=(pr.budgetItems||[]).concat(k); if(pr.budgetPlanItems&&pr.budgetPlanItems.length&&!pr.budgetPlanItems.includes(k))pr.budgetPlanItems.push(k); } }); Object.entries(X.b1).forEach(([k,v])=>{ D.b1[k]=D.b1[k]||{bud:"",exe:""}; if(D.b1[k].bud===""||D.b1[k].bud==null){ D.b1[k].bud=v; nb++; } }); if(nb){ done.push(`비목 예산 ${nb}개`); if(!n(D.meta.totalPrev))D.meta.totalPrev=X.total!=null?X.total:Object.values(X.b1).reduce((a,v)=>a+n(v),0); }
+  if(X.gov.length&&!D.gov.length){ D.gov=X.gov; done.push(`조직 ${X.gov.length}개`); }
+  let nf=0; X.findings.forEach(f=>{ if(!D.findings.find(x=>x.msg===f.msg)){ D.findings.push(f); nf++; } }); if(nf)done.push(`문서 대조 ${nf}건`);
+  if(done.length&&!D.preset)D.preset="전년도 제출 문서에서 자동 추출 ("+X.srcNames.join(", ")+")";
+  ensureData(pr,D); return done; }
+
+/* ── 3. 항목별 전년도 원문 → 내용(안) ── */
+function attachPriorSections(srcs){ const priors=srcs.filter(s=>s.role==="prior"&&s.text); let nSec=0, nDraft=0;
+  prof().docs.forEach(doc=>{ const cands=priors.filter(s=>srcType(s)===doc.type).sort((a,b)=>jacc(b.name,doc.name)-jacc(a.name,doc.name)); const s=cands[0]; if(!s)return;
+    const L=s.text.split("\n"), st=tocEndOf(L)+1, freq=lineFreq(L);
+    const pos=doc.sections.filter(x=>x.title).map(x=>({x,i:locate(L,st,x.title)})).filter(f=>f.i>=0).sort((a,b)=>a.i-b.i);
+    pos.forEach((f,k)=>{ if(f.x.kind!=="text"&&f.x.kind!=="pp")return; let end=k+1<pos.length?pos[k+1].i:Math.min(L.length,f.i+400);
+      for(let j=f.i+3;j<end;j++)if(CHAPTER_RE.test(L[j])&&!(norm(L[j]).length<40&&(freq[norm(L[j])]||0)>=3)){ end=j; break; }
+      const body=cleanBody(L.slice(f.i+1,end),freq); if(body.length<60)return; const d=secData(doc.id,f.x.id);
+      d.prior={src:s.name,head:L[f.i].trim().slice(0,80),text:body.slice(0,8000)}; nSec++;
+      const key=f.x.kind==="pp"?(prof().ppFields[0]||{k:"f1"}).k:"text";
+      if(!d.draft&&isEmptyField(d[key])&&!(key==="text"&&f.x.from.length&&draftFrom(f.x))){ d.draft={by:"prior",at:Date.now(),ideas:[`‘${s.name}’의 ‘${d.prior.head}’ 원문을 그대로 가져왔습니다`,"연도·수치를 올해 기준으로 고치고, 올해 새로 한 일을 더하세요"],fields:{[key]:d.prior.text},check:["연도 표기와 수치를 올해 기준으로 갱신","올해 추가 실적·변경 사항 반영"]}; nDraft++; } }); });
+  return {nSec,nDraft}; }
+
+/* ── 전체 흐름 ── */
+async function autoFill(manual){ if(!P)return; const srcs=SOURCES.filter(s=>s.text&&!s.error); if(!srcs.length){ if(manual)toast("읽은 파일이 없습니다"); return; }
+  const log=[]; const st=autoStructure(srcs); if(st)log.push(st);
+  const X=rulePrior(srcs); const done=applyPriorEmpty(X); if(done.length)log.push("공통 데이터: "+done.join(" · "));
+  else if(srcs.some(s=>s.role==="prior"))log.push("공통 데이터: 새로 채울 빈 곳이 없거나 표를 찾지 못했습니다");
+  const r=attachPriorSections(srcs); if(r.nSec)log.push(`문서 항목 ${r.nSec}곳에 전년도 원문 연결 · 빈 항목 ${r.nDraft}곳에 내용(안) 준비`);
+  if(!log.length)log.push("자동으로 채울 내용을 찾지 못했습니다. 파일 역할(기본계획·서식·전년도)을 확인해 주세요");
+  dat().autoLog={at:Date.now(),steps:log,files:srcs.map(s=>s.name+" ("+ROLE_LABEL[s.role]+")")}; save(); return log; }
+function autoLogHTML(){ const a=P&&dat().autoLog; if(!a)return ""; return `<div class="panel" style="margin-bottom:16px;border-color:var(--accent)"><div class="row" style="justify-content:space-between"><h3 style="margin:0">파일에서 자동으로 채운 결과</h3><span class="small muted">${new Date(a.at).toLocaleString("ko-KR")}</span></div>
+  <ul class="ideas" style="margin:8px 0">${a.steps.map(s=>`<li>${esc(s)}</li>`).join("")}</ul><p class="small muted" style="margin:0 0 8px">사용한 파일: ${a.files.map(esc).join(", ")}</p>
+  <div class="row"><button class="btn sm pri" data-go="map">매칭 맵 보기</button><button class="btn sm" data-go="tasks">${esc(prof().modules.tasks.label)} 확인</button><button class="btn sm" data-go="kpi">${esc(prof().modules.kpi.label)} 확인</button><button class="btn sm" data-act="autoFillAgain">다시 실행</button><button class="btn ghost sm" data-act="autoLogHide">닫기</button></div>
+  <p class="small muted" style="margin:8px 0 0">규칙으로 뽑은 값입니다. 노란 표시(내용(안))와 ‘문서 대조 결과’를 확인한 뒤 쓰세요. Claude를 쓸 수 있는 보기에서는 ‘사업 구조 설정 → 전년도 문서 분석’으로 더 정밀하게 뽑을 수 있습니다.</p></div>`; }
+async function autoStartFiles(files){ if(!files.length)return; if(P&&P.demo)await exitDemo(true); const p=newProject("새 사업",BLANK_PROFILE()); await adopt(p);
+  await addFiles(files); const pr=prof(), D=dat(); P.name=[D.meta.org,pr.programName].filter(Boolean).join(" · ")||P.name; PROJ=PROJ.map(x=>x.id===P.id?Object.assign(x,{name:P.name}):x); save(); go("home"); }
 
 /* ---- 06.views.js ---- */
 /* =====================================================================
@@ -1044,6 +1182,7 @@ const V={};
 V.welcome=()=>head("표준 보고서 자동화","시작할 사업을 고르세요","사업마다 기본계획과 작성 서식이 달라도 같은 방식으로 씁니다. 내장 템플릿으로 시작하거나, 다른 재정지원사업의 기본계획·서식 파일을 올려 구조를 만드세요.")+V.newproj(true);
 V.newproj=(inline)=>`${inline?"":head("새 사업","새 사업 만들기","사업 구조(평가영역·집행기준·문서 목차·공통 데이터)는 만든 뒤 ‘사업 구조 설정’에서 파일을 올려 자동으로 채우거나 직접 고칠 수 있습니다.")}
   <div class="panel demo-card" style="margin-bottom:16px"><div class="row" style="justify-content:space-between"><div><h3 style="margin:0">처음이라면 데모부터</h3><p class="small" style="margin:4px 0 0">가상 대학 데이터로 전체 흐름(점검 → 매칭 → 공통 데이터 → 문서 작성 → 생성)을 10단계로 안내하고, 예시 서식으로 구조 분석까지 눌러 봅니다. 데모에서 입력한 내용은 저장되지 않습니다.</p></div><button class="btn pri" data-act="startDemo">데모 체험 시작</button></div></div>
+  <div class="panel" style="margin-bottom:16px;border-color:var(--accent)"><h3 style="margin:0 0 4px">파일만 올려서 바로 시작 (권장)</h3><p class="small muted" style="margin:0 0 10px">기본계획(안)·작성 서식·전년도 보고서·계획서를 한꺼번에 올리면 사업 구조, 매칭 맵, 과제·지표·예산·조직, 항목별 전년도 원문까지 자동으로 채웁니다. 내장 템플릿과 같은 사업이면 템플릿 구조를 씁니다.</p><div class="dz" id="dz" data-act="autoStart" role="button" tabindex="0">여기에 파일을 끌어다 놓거나 눌러서 고르세요<div class="small muted">PDF · HWP · HWPX · DOCX · XLSX · ZIP — 여러 개 한 번에</div></div>${BUSY?`<p class="busy">${esc(BUSY)}</p>`:""}</div>
   <div class="grid2"><div class="panel"><h3>내장 템플릿으로 시작</h3><p class="small muted" style="margin:0 0 10px">구조가 이미 정리된 사업입니다. 기관 데이터만 채우면 됩니다.</p>${Object.values(TEMPLATES).map(t=>`<div class="row" style="justify-content:space-between;border-top:1px solid var(--line);padding-top:8px;margin-top:8px"><div><b>${esc(t.programName)}</b><div class="small muted">${esc(t.planTitle)} · 문서 ${t.docs.length}종</div></div><button class="btn pri sm" data-act="createFrom" data-key="${esc(t.key)}">이 템플릿으로 만들기</button></div>`).join("")}</div>
   <div class="panel"><h3>다른 재정지원사업 (파일에서 만들기)</h3><p class="small muted" style="margin:0 0 10px">빈 프로필로 사업을 만든 뒤 기본계획(안)과 작성 서식(HWP·HWPX·PDF·DOCX·ZIP)을 올려 구조를 뽑습니다.</p><label class="f">사업 이름<input id="newName" type="text" placeholder="예) 2026 RISE 사업, LINC 3.0, 고교교육 기여대학 지원사업"></label><button class="btn pri" style="margin-top:10px" data-act="createBlank">빈 프로필로 만들고 파일 올리기</button></div></div>`;
 
@@ -1053,7 +1192,7 @@ V.home=()=>{
   const docStats=pr.docs.map(d=>{const st=visibleSecs(d).map(s=>secStatus(d,s)).filter(Boolean);return {d,p:st.length?Math.round(st.filter(x=>x==="ok").length/st.length*100):0}});
   const bonus=pr.modules.bonus; const bo=bonus&&bonus.on&&bonus.table&&vOK(bonus)?calcBonus():null;
   return head(pr.programName||"사업명 미정",`${ORG()} 작성 현황`,`${esc(pr.goal||"기본계획의 평가요소를 기준으로 평가(실적)보고서와 사업계획서를 하나의 데이터로 작성합니다.")}`, dat().preset?`<div class="row"><span class="small muted">${esc(dat().preset)}</span>${(dat().findings||[]).length?`<button class="btn sm" data-go="verify">문서 대조 결과</button>`:""}</div>`:"")+
-  `<div class="stack">${pr.schedule.length?`<div class="timeline">${pr.schedule.map(s=>`<div class="tl ${s.now?"now":""}"><div class="d">${esc(s.d)}</div><div class="w">${esc(s.w)}</div><div class="small muted">${esc(s.s)}</div></div>`).join("")}</div>`:""}
+  `<div class="stack">${autoLogHTML()}${pr.schedule.length?`<div class="timeline">${pr.schedule.map(s=>`<div class="tl ${s.now?"now":""}"><div class="d">${esc(s.d)}</div><div class="w">${esc(s.w)}</div><div class="small muted">${esc(s.s)}</div></div>`).join("")}</div>`:""}
   ${pr.docs.length?"":`<div class="empty-state"><b>아직 문서 구조가 없습니다.</b><p class="small">기본계획과 작성 서식을 올리면 평가영역, 집행기준, 문서 목차가 자동으로 만들어집니다.</p><button class="btn pri" data-go="setup">사업 구조 설정으로 이동</button></div>`}
   ${pr.docs.length?batchBoxHTML():""}
   <div class="grid3">${docStats.map(x=>`<div class="panel stat"><span class="small muted">${esc(x.d.name)} ${x.d.due?"("+esc(x.d.due)+")":""}</span><span class="v">${x.p}%</span><div class="meter"><i style="width:${x.p}%"></i></div><span class="small muted">${x.d.pageLimit?"본문 "+x.d.pageLimit+"쪽 이내":"분량 기준 미설정"}</span></div>`).join("")}
@@ -1094,12 +1233,12 @@ V.setup=()=>{ const pr=prof(); const plans=SOURCES.filter(s=>s.role==="plan").le
   const steps=[["1. 파일 올리기",`기본계획 ${plans} · 서식 ${forms} · 전년도 ${priors}`,SOURCES.length>0],["2. 구조 분석","평가영역·집행기준·목차",pr.docs.length>0],["3. 구조 확인·수정","아래 편집 탭",pr.docs.length>0&&pr.evalAreas.length>0],["4. 전년도 데이터 추출","과제·지표·재정·대조",(dat().findings||[]).length>0]];
   const tabs=[["basic","기본 정보"],["areas","평가영역"],["rules","집행기준·비목"],["docs","문서·목차"],["modules","공통 데이터 모듈"],["sched","일정·작성 항목"]];
   return head("사업 구조 = 메뉴 구성",`${pr.programName||"새 사업"} 구조 설정`,"기본계획(안)과 작성 서식을 올리면 이 사업의 평가영역, 집행기준, 문서 목차, 공통 데이터 모듈이 만들어지고 왼쪽 메뉴가 그에 맞춰 바뀝니다.",`<div class="row"><button class="btn sm" data-act="exportProfile">구조 내보내기</button><button class="btn sm" data-act="importAsk">불러오기</button><span id="delSlot"><button class="btn sm" data-act="delProjAsk">이 사업 삭제</button></span></div>`)+
-  `<div class="steps">${steps.map((s,i)=>`<div class="step ${s[2]?"done":""}"><b>${esc(s[0])}</b>${esc(s[1])}</div>`).join("")}</div>
+  autoLogHTML()+`<div class="steps">${steps.map((s,i)=>`<div class="step ${s[2]?"done":""}"><b>${esc(s[0])}</b>${esc(s[1])}</div>`).join("")}</div>
   <div class="grid2"><div class="panel"><h3>1. 파일 올리기</h3><div class="dz" id="dz" data-act="pickFiles" role="button" tabindex="0">여기에 파일을 끌어다 놓거나 눌러서 고르세요<div class="small muted">PDF · HWP · HWPX · DOCX · XLSX · CSV · TXT · ZIP(서식 묶음)</div></div>
     ${BUSY?`<p class="busy">${esc(BUSY)}</p>`:""}
     <div class="fl" style="margin-top:10px">${SOURCES.map(s=>`<div><div class="fi"><span class="nm small" title="${esc(s.name)}">${esc(s.name)} <span class="muted">${s.error?"· "+esc(s.error):"· "+(s.chars||0).toLocaleString()+"자"+(s.truncated?"(일부 저장)":"")}</span></span><select data-srcrole="${esc(s.id)}" aria-label="문서 역할">${Object.entries(ROLE_LABEL).map(([k,l])=>`<option value="${k}" ${s.role===k?"selected":""}>${l}</option>`).join("")}</select><button class="btn ghost sm" data-act="srcPrev" data-id="${esc(s.id)}">보기</button><button class="btn ghost sm" data-act="srcDel" data-id="${esc(s.id)}">삭제</button></div>${s._open?`<pre class="prev">${esc((s.text||"").slice(0,4000))}</pre>`:""}</div>`).join("")||'<p class="small muted">아직 올린 파일이 없습니다.</p>'}</div></div>
   <div class="panel"><h3>2. 구조 분석</h3><p class="small muted" style="margin:0 0 10px">규칙 분석은 목차·작성방법·배점·비목 한도(%)를 문장 패턴으로 찾습니다. Claude 분석은 서식 지시문까지 읽어 항목 종류와 문서 간 연결을 더 정확히 잡습니다. 어느 쪽이든 결과는 아래 탭에서 고칠 수 있습니다.</p>
-    <div class="row"><button class="btn" data-act="ruleAnalyze" ${plans+forms?"":"disabled"}>규칙으로 구조 만들기</button><button class="btn pri" data-act="claudeAnalyze" id="btnClaude" ${plans+forms?"":"disabled"}>Claude로 정밀 분석</button></div>
+    <div class="row"><button class="btn" data-act="ruleAnalyze" ${plans+forms+priors?"":"disabled"}>규칙으로 구조 만들기</button><button class="btn pri" data-act="claudeAnalyze" id="btnClaude" ${plans+forms+priors?"":"disabled"}>Claude로 정밀 분석</button></div>
     <h3 style="margin-top:16px">4. 전년도 제출 문서에서 데이터 추출</h3><p class="small muted" style="margin:0 0 10px">전년도 보고서·계획서를 ‘전년도 제출 문서’로 올리면 Claude가 ${esc(pr.modules.tasks.label)}, ${esc(pr.modules.kpi.label)}, 비목 예산, 조직을 뽑고 문서 간 불일치를 찾아 ‘문서 대조 결과’로 정리합니다.</p>
     <button class="btn pri" data-act="priorExtract" ${priors?"":"disabled"}>전년도 문서 분석</button>
     ${PRIOR?`<div class="guide" style="margin-top:10px"><b>추출 결과 미리보기</b><p style="margin:4px 0">${esc(pr.modules.tasks.label)} ${(PRIOR.tasks||[]).length}개 · ${esc(pr.modules.kpi.label)} ${(PRIOR.kpi||[]).length}개 · 비목 ${Object.keys(PRIOR.b1||{}).length}개 · 조직 ${(PRIOR.gov||[]).length}개 · 대조 결과 ${(PRIOR.findings||[]).length}건</p><div class="row"><button class="btn pri sm" data-act="applyPrior">현재 사업에 적용</button><button class="btn sm" data-act="dropPrior">버리기</button></div><p class="small muted" style="margin:6px 0 0">적용하면 같은 종류의 기존 입력을 이 결과로 바꿉니다.</p></div>`:""}
@@ -1203,12 +1342,12 @@ document.addEventListener("input",e=>{ const el=e.target; if(!P||!el.dataset||!e
 document.addEventListener("change",async e=>{ const el=e.target;
   if(el.id==="projSel"){ if(el.value)await openProject(el.value); return; }
   if(el.id==="showDraft"){ SHOWDRAFT=el.checked; render(true); return; }
-  if(el.id==="fileIn"){ await addFiles([...el.files]); el.value=""; return; }
+  if(el.id==="fileIn"){ const fs=[...el.files]; el.value=""; if(AUTO_NEW){ AUTO_NEW=false; await autoStartFiles(fs); } else await addFiles(fs); return; }
   if(el.id==="jsonIn"){ const f=el.files[0]; el.value=""; if(f)importJSON(await f.text()); return; }
   if(el.dataset&&el.dataset.srcrole){ const s=SOURCES.find(x=>x.id===el.dataset.srcrole); if(s){ s.role=el.value; try{await Store.saveSource(P.id,s)}catch(err){} render(true);} return; }
   if(el.dataset&&el.dataset.b&&P){ setPath(el.dataset.b,readVal(el)); if(/\.(variant|status|group|kind|src|type|chg)$|meta\.flag|modules\..*\.on|bonus$/.test(el.dataset.b))ensureData(prof(),dat()); save(); render(true); } });
-["dragover","dragleave","drop"].forEach(ev=>document.addEventListener(ev,e=>{ const dz=e.target.closest&&e.target.closest("#dz"); if(!dz)return; e.preventDefault(); if(ev==="dragover")dz.classList.add("on"); else dz.classList.remove("on"); if(ev==="drop")addFiles([...e.dataTransfer.files]); }));
-document.addEventListener("keydown",e=>{ if(e.target.id==="dz"&&(e.key==="Enter"||e.key===" ")){e.preventDefault();$("#fileIn").click();} });
+["dragover","dragleave","drop"].forEach(ev=>document.addEventListener(ev,e=>{ const dz=e.target.closest&&e.target.closest("#dz"); if(!dz)return; e.preventDefault(); if(ev==="dragover")dz.classList.add("on"); else dz.classList.remove("on"); if(ev==="drop"){ const fs=[...e.dataTransfer.files]; if(dz.dataset.act==="autoStart")autoStartFiles(fs); else addFiles(fs); } }));
+document.addEventListener("keydown",e=>{ if(e.target.id==="dz"&&(e.key==="Enter"||e.key===" ")){e.preventDefault(); if(e.target.dataset.act==="autoStart")AUTO_NEW=true; $("#fileIn").click();} });
 document.addEventListener("click",async e=>{
   const b=e.target.closest("button,[data-act]"); if(!b)return;
   if(b.dataset.go){ if(b.dataset.tab)setupTab=b.dataset.tab; go(b.dataset.go); return; }
@@ -1253,6 +1392,9 @@ document.addEventListener("click",async e=>{
     clearFindingsAsk(){ b.outerHTML=`<span class="confirm">대조 결과를 지웁니다 <button class="btn sm" data-act="clearFindingsDo">지우기</button><button class="btn sm" data-act="noop">취소</button></span>`; return "skip"; },
     clearFindingsDo(){ dat().findings=[]; cur="home"; },
     pickFiles(){ $("#fileIn").click(); return "skip"; },
+    autoStart(){ AUTO_NEW=true; $("#fileIn").click(); return "skip"; },
+    async autoFillAgain(){ const log=await autoFill(true); toast((log||[])[0]||"다시 실행했습니다"); },
+    autoLogHide(){ delete dat().autoLog; },
     srcPrev(){ const s=SOURCES.find(x=>x.id===b.dataset.id); if(s)s._open=!s._open; render(true); return "skip"; },
     async srcDel(){ const id=b.dataset.id; SOURCES=SOURCES.filter(x=>x.id!==id); try{await Store.delSource(P.id,id)}catch(err){} render(true); return "skip"; },
     ruleAnalyze(){ const base={key:"custom",programName:prof().programName,orgLabel:prof().orgLabel,years:prof().years,variantLabel:prof().variantLabel,variants:prof().variants}; const np=ruleBasedProfile(SOURCES.filter(s=>s.text),base); if(!np.programName)np.programName=prof().programName; P.profile=np; ensureData(np,dat()); setupTab="docs"; toast(`문서 ${np.docs.length}종, 평가영역 ${np.evalAreas.length}개, 집행기준 ${np.rules.length}개를 찾았습니다`); if(P.demo&&TOURI>=0&&TOUR[TOURI]&&TOUR[TOURI].demoStep==="analyze")TOURI++; },
@@ -1281,7 +1423,7 @@ async function openProject(id){ const p=await Store.load(id); if(!p){toast("사�
 async function addFiles(files){ if(!P||!files.length)return; for(const f of files){ BUSY=`${f.name} 읽는 중…`; render(true);
     try{ const buf=await f.arrayBuffer(); const outs=await extractFile(f.name,buf); for(const o of outs){ const s={id:"s"+uid(),name:o.name,role:o.error?"attach":guessRole(o.name,o.text),chars:(o.text||"").length,text:o.text||"",error:o.error||""}; if(!s.error&&s.chars<30){s.error="본문 텍스트가 거의 없습니다(스캔 이미지일 수 있음)";} SOURCES.push(s); try{await Store.saveSource(P.id,s)}catch(err){ toast("원문 저장 실패: "+(err.code||err.message)); } } }
     catch(err){ SOURCES.push({id:"s"+uid(),name:f.name,role:"attach",chars:0,text:"",error:err.message||String(err)}); } }
-  BUSY=""; render(true); toast("파일을 읽었습니다. 역할(기본계획·서식·전년도 문서)을 확인하세요"); }
+  BUSY="자동으로 구조·데이터·항목 원문을 채우는 중…"; render(true); await new Promise(r=>setTimeout(r,30)); let log=null; try{ log=await autoFill(); }catch(err){ console.error(err); toast("자동 채우기 중 오류: "+(err.message||err)); } BUSY=""; render(true); if(log)toast("파일을 읽고 자동으로 채웠습니다. 위의 결과를 확인하세요"); }
 function applyPrior(x){ if(!x)return; const D=dat(), pr=prof();
   if(x.meta){ ["org","addr","url"].forEach(k=>{if(x.meta[k])D.meta[k]=x.meta[k]}); if(x.meta.variant&&(pr.variants||[]).includes(x.meta.variant))D.meta.variant=x.meta.variant; }
   if(Array.isArray(x.tasks)&&x.tasks.length)D.tasks=x.tasks.map(t=>({group:String(t.group||""),no:String(t.no||""),name:String(t.name||""),planName:String(t.planName||t.name||""),goal:String(t.goal||""),result:"",status:"",fb:"",next:String(t.next||""),next2:String(t.next2||""),p1:String(t.p1||""),p2:"",p3:"",chg:"유지",chgNote:"",oldName:""}));

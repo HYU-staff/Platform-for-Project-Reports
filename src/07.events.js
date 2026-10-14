@@ -6,12 +6,12 @@ document.addEventListener("input",e=>{ const el=e.target; if(!P||!el.dataset||!e
 document.addEventListener("change",async e=>{ const el=e.target;
   if(el.id==="projSel"){ if(el.value)await openProject(el.value); return; }
   if(el.id==="showDraft"){ SHOWDRAFT=el.checked; render(true); return; }
-  if(el.id==="fileIn"){ await addFiles([...el.files]); el.value=""; return; }
+  if(el.id==="fileIn"){ const fs=[...el.files]; el.value=""; if(AUTO_NEW){ AUTO_NEW=false; await autoStartFiles(fs); } else await addFiles(fs); return; }
   if(el.id==="jsonIn"){ const f=el.files[0]; el.value=""; if(f)importJSON(await f.text()); return; }
   if(el.dataset&&el.dataset.srcrole){ const s=SOURCES.find(x=>x.id===el.dataset.srcrole); if(s){ s.role=el.value; try{await Store.saveSource(P.id,s)}catch(err){} render(true);} return; }
   if(el.dataset&&el.dataset.b&&P){ setPath(el.dataset.b,readVal(el)); if(/\.(variant|status|group|kind|src|type|chg)$|meta\.flag|modules\..*\.on|bonus$/.test(el.dataset.b))ensureData(prof(),dat()); save(); render(true); } });
-["dragover","dragleave","drop"].forEach(ev=>document.addEventListener(ev,e=>{ const dz=e.target.closest&&e.target.closest("#dz"); if(!dz)return; e.preventDefault(); if(ev==="dragover")dz.classList.add("on"); else dz.classList.remove("on"); if(ev==="drop")addFiles([...e.dataTransfer.files]); }));
-document.addEventListener("keydown",e=>{ if(e.target.id==="dz"&&(e.key==="Enter"||e.key===" ")){e.preventDefault();$("#fileIn").click();} });
+["dragover","dragleave","drop"].forEach(ev=>document.addEventListener(ev,e=>{ const dz=e.target.closest&&e.target.closest("#dz"); if(!dz)return; e.preventDefault(); if(ev==="dragover")dz.classList.add("on"); else dz.classList.remove("on"); if(ev==="drop"){ const fs=[...e.dataTransfer.files]; if(dz.dataset.act==="autoStart")autoStartFiles(fs); else addFiles(fs); } }));
+document.addEventListener("keydown",e=>{ if(e.target.id==="dz"&&(e.key==="Enter"||e.key===" ")){e.preventDefault(); if(e.target.dataset.act==="autoStart")AUTO_NEW=true; $("#fileIn").click();} });
 document.addEventListener("click",async e=>{
   const b=e.target.closest("button,[data-act]"); if(!b)return;
   if(b.dataset.go){ if(b.dataset.tab)setupTab=b.dataset.tab; go(b.dataset.go); return; }
@@ -56,6 +56,9 @@ document.addEventListener("click",async e=>{
     clearFindingsAsk(){ b.outerHTML=`<span class="confirm">대조 결과를 지웁니다 <button class="btn sm" data-act="clearFindingsDo">지우기</button><button class="btn sm" data-act="noop">취소</button></span>`; return "skip"; },
     clearFindingsDo(){ dat().findings=[]; cur="home"; },
     pickFiles(){ $("#fileIn").click(); return "skip"; },
+    autoStart(){ AUTO_NEW=true; $("#fileIn").click(); return "skip"; },
+    async autoFillAgain(){ const log=await autoFill(true); toast((log||[])[0]||"다시 실행했습니다"); },
+    autoLogHide(){ delete dat().autoLog; },
     srcPrev(){ const s=SOURCES.find(x=>x.id===b.dataset.id); if(s)s._open=!s._open; render(true); return "skip"; },
     async srcDel(){ const id=b.dataset.id; SOURCES=SOURCES.filter(x=>x.id!==id); try{await Store.delSource(P.id,id)}catch(err){} render(true); return "skip"; },
     ruleAnalyze(){ const base={key:"custom",programName:prof().programName,orgLabel:prof().orgLabel,years:prof().years,variantLabel:prof().variantLabel,variants:prof().variants}; const np=ruleBasedProfile(SOURCES.filter(s=>s.text),base); if(!np.programName)np.programName=prof().programName; P.profile=np; ensureData(np,dat()); setupTab="docs"; toast(`문서 ${np.docs.length}종, 평가영역 ${np.evalAreas.length}개, 집행기준 ${np.rules.length}개를 찾았습니다`); if(P.demo&&TOURI>=0&&TOUR[TOURI]&&TOUR[TOURI].demoStep==="analyze")TOURI++; },
@@ -84,7 +87,7 @@ async function openProject(id){ const p=await Store.load(id); if(!p){toast("사�
 async function addFiles(files){ if(!P||!files.length)return; for(const f of files){ BUSY=`${f.name} 읽는 중…`; render(true);
     try{ const buf=await f.arrayBuffer(); const outs=await extractFile(f.name,buf); for(const o of outs){ const s={id:"s"+uid(),name:o.name,role:o.error?"attach":guessRole(o.name,o.text),chars:(o.text||"").length,text:o.text||"",error:o.error||""}; if(!s.error&&s.chars<30){s.error="본문 텍스트가 거의 없습니다(스캔 이미지일 수 있음)";} SOURCES.push(s); try{await Store.saveSource(P.id,s)}catch(err){ toast("원문 저장 실패: "+(err.code||err.message)); } } }
     catch(err){ SOURCES.push({id:"s"+uid(),name:f.name,role:"attach",chars:0,text:"",error:err.message||String(err)}); } }
-  BUSY=""; render(true); toast("파일을 읽었습니다. 역할(기본계획·서식·전년도 문서)을 확인하세요"); }
+  BUSY="자동으로 구조·데이터·항목 원문을 채우는 중…"; render(true); await new Promise(r=>setTimeout(r,30)); let log=null; try{ log=await autoFill(); }catch(err){ console.error(err); toast("자동 채우기 중 오류: "+(err.message||err)); } BUSY=""; render(true); if(log)toast("파일을 읽고 자동으로 채웠습니다. 위의 결과를 확인하세요"); }
 function applyPrior(x){ if(!x)return; const D=dat(), pr=prof();
   if(x.meta){ ["org","addr","url"].forEach(k=>{if(x.meta[k])D.meta[k]=x.meta[k]}); if(x.meta.variant&&(pr.variants||[]).includes(x.meta.variant))D.meta.variant=x.meta.variant; }
   if(Array.isArray(x.tasks)&&x.tasks.length)D.tasks=x.tasks.map(t=>({group:String(t.group||""),no:String(t.no||""),name:String(t.name||""),planName:String(t.planName||t.name||""),goal:String(t.goal||""),result:"",status:"",fb:"",next:String(t.next||""),next2:String(t.next2||""),p1:String(t.p1||""),p2:"",p3:"",chg:"유지",chgNote:"",oldName:""}));

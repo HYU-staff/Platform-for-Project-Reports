@@ -1,4 +1,4 @@
-<title>재정지원사업 보고서 작성 플랫폼</title>
+<title>Platform for Project Reports</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap">
@@ -177,6 +177,7 @@ table.t textarea{min-height:52px;font-size:12px}
 .lvl2{padding-left:14px}.lvl3{padding-left:28px}.lvl4{padding-left:42px}
 pre.prev{white-space:pre-wrap;max-height:260px;overflow:auto;background:var(--sunk);padding:10px;border-radius:4px;font-size:12px;margin:6px 0 0}
 .tour{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));width:min(360px,calc(100vw - 32px));background:var(--surface);border:1px solid var(--accent);border-radius:var(--r);box-shadow:0 8px 28px rgba(0,0,0,.18);padding:14px 16px;z-index:40;display:flex;flex-direction:column;gap:8px}
+[hidden]{display:none!important}
 .tour .tstep{font-size:11px;letter-spacing:.08em;color:var(--accent);font-weight:700}
 .tour h4{margin:0;font-size:15px}
 .tour p{margin:0;font-size:13px;color:var(--ink-2)}
@@ -193,7 +194,7 @@ pre.prev{white-space:pre-wrap;max-height:260px;overflow:auto;background:var(--su
 .empty-state{border:1px dashed var(--line);border-radius:var(--r);padding:28px;text-align:center;color:var(--ink-2);background:var(--surface)}
 </style>
 <div class="top">
-  <div class="brand"><b>재정지원사업 보고서 작성 플랫폼</b><span id="brandSub">기본계획 · 평가(실적)보고서 · 사업계획서 연계 표준 자동화</span></div>
+  <div class="brand"><b>Platform for Project Reports</b><span id="brandSub">기본계획 · 평가(실적)보고서 · 사업계획서 연계 표준 자동화</span></div>
   <span class="sp"></span>
   <div class="projsel"><label class="small muted" for="projSel">사업</label><select id="projSel"></select><button class="btn sm" data-act="newProjAsk">새 사업</button><button class="btn sm" data-act="startDemo">데모 체험</button></div>
   <span class="chip g" id="chipUniv">기관</span>

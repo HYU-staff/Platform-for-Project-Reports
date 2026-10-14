@@ -281,7 +281,7 @@ function linkProfile(p){
 }
 function ruleBasedProfile(sources,base){
   const p=Object.assign(BLANK_PROFILE(),base?clone(base):{}); p.docs=[];
-  const plans=sources.filter(s=>s.role==="plan"), forms=sources.filter(s=>s.role==="form");
+  const plans=sources.filter(s=>s.role==="plan"); let forms=sources.filter(s=>s.role==="form"); if(!forms.length)forms=sources.filter(s=>s.role==="prior");
   if(plans.length){ const R=analyzePlanText(plans.map(s=>s.text).join("\n\n")); ["planTitle","programName","goal","period"].forEach(k=>{if(R[k])p[k]=R[k]}); if(R.evalAreas.length)p.evalAreas=R.evalAreas; if(R.rules.length)p.rules=R.rules; if(R.budgetItems.length){p.budgetItems=R.budgetItems;p.budgetPlanItems=R.budgetItems.slice();} if(R.schedule.length)p.schedule=R.schedule; if(R.equipThreshold)p.equipThreshold=R.equipThreshold;
     if(R.hints.kpi)p.modules.kpi.on=true; if(R.hints.gov)p.modules.gov.on=true; if(R.hints.finance)p.modules.finance.on=true; if(R.kpiN){p.modules.kpi.min=Math.max(1,R.kpiN-2);p.modules.kpi.max=R.kpiN+2;} if(R.required.length)p.modules.gov.required=R.required;
     if(R.evalAreas.some(a=>a.bonus))p.modules.bonus.on=false; }
@@ -307,7 +307,7 @@ const PROFILE_SCHEMA=`{"programName":"사업명","planTitle":"기본계획 제�
 "modules":{"tasks":{"on":true,"label":"핵심과제 등 명칭","groups":[{"area":"세부영역명","sec":"3.1.1","n":2,"variant":""}]},"kpi":{"on":true,"label":"성과지표 명칭","min":3,"max":7},"gov":{"on":true,"label":"명칭","required":[{"match":"위원회","must":"학생","label":"재학생"}]},"finance":{"on":true,"label":"재정·집행기준"}},
 "docs":[{"id":"d1","type":"report|plan","name":"문서명","due":"제출기한","pageLimit":40,"cover":["표지 문구"],"sections":[{"id":"s1","no":"Ⅰ-1","title":"목차 제목","kind":"head|text|pp|auto|derived","src":"tasks|kpi|gov|budget|summary|빈문자열","group":"핵심과제 세부영역명 또는 빈 문자열","keys":0,"evalArea":"E1 또는 빈 문자열","onlyVariant":"","guide":["작성방법 요지(최대 3개, 각 60자 이내)"],"from":["d1:s3"]}]}]}`;
 function profilePrompt(sources){
-  const plans=sources.filter(s=>s.role==="plan"), forms=sources.filter(s=>s.role==="form");
+  const plans=sources.filter(s=>s.role==="plan"); let forms=sources.filter(s=>s.role==="form"); if(!forms.length)forms=sources.filter(s=>s.role==="prior");
   const per=forms.length?Math.floor(42000/forms.length):0;
   return `너는 한국 정부 재정지원사업(대학·기관 대상) 문서 구조 분석가다. 아래 [기본계획]과 [작성 서식]을 읽고, 보고서 작성 자동화 플랫폼이 쓸 "사업 프로필" JSON 하나만 답하라. 설명 문장 없이 JSON만.
 
